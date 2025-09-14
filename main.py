@@ -13,16 +13,16 @@ def main():
         match = re.search(r'seed_(\d+)_', args.pretrained)
         if match:
             pretrained_seed = match.group(1)
-        save_path = args.root_dir + f'checkpoints_{args.scenario}_range{args.range}km/pretrained_seed{pretrained_seed}_seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_finetunescenario{args.finetune_scenario}_alpha_{args.alpha}_scheduler{args.scheduler}/'
+        save_path = args.root_dir + f'large/checkpoints_{args.scenario}_range{args.range}km/pretrained_seed{pretrained_seed}_seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_finetunescenario{args.finetune_scenario}_alpha_{args.alpha}_scheduler{args.scheduler}/'
     else:
-        save_path = args.root_dir + f'checkpoints_{args.scenario}_range{args.range}km/seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_alpha_{args.alpha}_scheduler{args.scheduler}/'
+        save_path = args.root_dir + f'large/checkpoints_{args.scenario}_range{args.range}km/seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_alpha_{args.alpha}_scheduler{args.scheduler}/'
     for arg in vars(args):
         logger.info(f'{arg}: {getattr(args, arg)}', root=save_path)
     if args.evaluate:
         save_path = args.pretrained[:-8]
 
     if args.bty != 'flat':
-        save_path = args.root_dir + f'checkpoints_{args.scenario}_{args.bty}_range{args.range}km/seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_alpha_{args.alpha}_scheduler{args.scheduler}/'
+        save_path = args.root_dir + f'large/checkpoints_{args.scenario}_{args.bty}_range{args.range}km/seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_alpha_{args.alpha}_scheduler{args.scheduler}/'
 
     logger.info('=> PyTorch Version: {}'.format(torch.__version__), root=save_path)
 
