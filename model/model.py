@@ -73,33 +73,32 @@ class ContractBlock(nn.Sequential):
                                                          ('relu', nn.LeakyReLU(negative_slope=0.3, inplace=True))]))
 
 class ExpandBlock(nn.Sequential):
-    def __init__(self, in_channel, out_channel, kernel_size=3, pad=True, stride=1, groups=1, upsample_kernel_size=2, upsample_stride=2):
+    def __init__(self, in_channel, out_channel, kernel_size=3, pad=True, stride=1, groups=1, upsample_stride=2):
         super(ExpandBlock, self).__init__(OrderedDict([('conv', ConvBN(in_channel, out_channel, kernel_size, pad=pad, stride=stride, groups=groups)),
                                                        ('relu', nn.LeakyReLU(negative_slope=0.3, inplace=True)),
-                                                       ('deconv', nn.ConvTranspose2d(out_channel, out_channel, kernel_size=upsample_kernel_size, stride=upsample_stride))]))
+                                                       ('upsample', nn.Upsample(scale_factor=upsample_stride, mode='nearest')),]))
         
 # class BottleneckBlock(nn.Sequential):
 #     def __init__(self, channel, sample_rate):
 #         super(BottleneckBlock, self).__init__(OrderedDict([('max_pool', nn.MaxPool2d(sample_rate, sample_rate)),
                                                         #    ('deconv', nn.ConvTranspose2d(channel, channel, kernel_size=sample_rate, stride=sample_rate))]))
 
-
 class SPPNet(nn.Module):
     def __init__(self, in_channel, out_channel):
         super(SPPNet, self).__init__()
-        self.encoder_block = SPPBlock(in_channel, 8, 32) # 256*512*in_channel -> 256*512*32
-        self.contract1 = ContractBlock(32, 64, pool_kernel=2, pool_stride=2) # 256*512*32 -> 128*256*64
-        self.contract2 = ContractBlock(64, 128, pool_kernel=2, pool_stride=2) # 128*256*64 -> 64*128*128
-        self.contract3 = ContractBlock(128, 256, pool_kernel=4, pool_stride=4) # 64*128*128 -> 16*32*256
+        self.encoder_block = SPPBlock(in_channel, 2, 8) # 256*512*in_channel -> 256*512*32
+        self.contract1 = ContractBlock(8, 16) # 256*512*32 -> 128*256*64
+        self.contract2 = ContractBlock(16, 32) # 128*256*64 -> 64*128*128
+        self.contract3 = ContractBlock(32, 64, pool_kernel=4, pool_stride=4) # 64*128*128 -> 16*32*256
         self.max_pool = nn.MaxPool2d(2, 2) # 16*32*256 -> 8*16*256
 
-        self.deconv = nn.ConvTranspose2d(256, 256, kernel_size=2, stride=2) # 8*16*256 -> 16*32*256
-        self.expand1 = ExpandBlock(512, 256, upsample_kernel_size=4, upsample_stride=4) # 16*32*256+16*32*256 -> 64*128*256
-        self.expand2 = ExpandBlock(384, 128, upsample_kernel_size=2, upsample_stride=2) # 64*128*256+64*128*128 -> 128*256*128
-        self.expand3 = ExpandBlock(192, 64, upsample_kernel_size=2, upsample_stride=2) # 128*256*128+128*256*64 -> 256*512*64
-        self.conv1x1 = ConvBN(96, 2, 1) # 256*512*64 -> 256*512*2
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest') # 8*16*256 -> 16*32*256
+        self.expand1 = ExpandBlock(128, 64, upsample_stride=4) # 16*32*256+16*32*256 -> 64*128*256
+        self.expand2 = ExpandBlock(96, 32, upsample_stride=2) # 64*128*256+64*128*128 -> 128*256*128
+        self.expand3 = ExpandBlock(48, 16, upsample_stride=2) # 128*256*128+128*256*64 -> 256*512*64
+        self.conv1x1 = ConvBN(24, 2, 1) # 256*512*64 -> 256*512*2
         self.relu = nn.LeakyReLU(negative_slope=0.3, inplace=True)
-        self.decoder_block = SPPBlock(2, 4, out_channel, res=True)
+        self.decoder_block = SPPBlock(2, 2, out_channel, res=True)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
@@ -110,7 +109,7 @@ class SPPNet(nn.Module):
         encode_out4 = self.contract3(encode_out3)
 
         # bottleneck
-        bottleneck = self.deconv(self.max_pool(encode_out4))
+        bottleneck = self.upsample(self.max_pool(encode_out4))
 
         # decode
         decode_out1 = self.expand1(torch.cat((encode_out4, bottleneck), dim=1))
