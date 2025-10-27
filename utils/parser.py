@@ -65,6 +65,8 @@ parser.add_argument('--finetune-range', type=int, default=100,
                     help='range of the TL area for fine-tuning')
 parser.add_argument('--bty', type=str, default='flat', 
                     help='bottom type of the TL area')
+parser.add_argument('--snr-db', type=float, default=0,
+                    help='SNR value in dB for adding noise to the data')
 # def get_root_dir():
 #     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 

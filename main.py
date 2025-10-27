@@ -13,9 +13,9 @@ def main():
         match = re.search(r'seed_(\d+)_', args.pretrained)
         if match:
             pretrained_seed = match.group(1)
-        save_path = args.root_dir + f'large/checkpoints_{args.scenario}_range{args.range}km/pretrained_seed{pretrained_seed}_seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_finetunescenario{args.finetune_scenario}_alpha_{args.alpha}_scheduler{args.scheduler}/'
+        save_path = args.root_dir + f'noise/checkpoints_{args.scenario}_range{args.range}km/pretrained_seed{pretrained_seed}_seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_finetunescenario{args.finetune_scenario}_alpha_{args.alpha}_scheduler{args.scheduler}_snr{args.snr_db}/'
     else:
-        save_path = args.root_dir + f'large/checkpoints_{args.scenario}_range{args.range}km/seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_alpha_{args.alpha}_scheduler{args.scheduler}/'
+        save_path = args.root_dir + f'noise/checkpoints_{args.scenario}_range{args.range}km/seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_alpha_{args.alpha}_scheduler{args.scheduler}_snr{args.snr_db}/'
     for arg in vars(args):
         logger.info(f'{arg}: {getattr(args, arg)}', root=save_path)
     if args.evaluate:
@@ -26,9 +26,9 @@ def main():
             match = re.search(r'seed_(\d+)_', args.pretrained)
             if match:
                 pretrained_seed = match.group(1)
-            save_path = args.root_dir + f'large/checkpoints_{args.scenario}_range{args.range}km/pretrained_seed{pretrained_seed}_seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_finetunescenario{args.finetune_scenario}_{args.bty}_alpha_{args.alpha}_scheduler{args.scheduler}/'
+            save_path = args.root_dir + f'noise/checkpoints_{args.scenario}_range{args.range}km/pretrained_seed{pretrained_seed}_seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_finetunescenario{args.finetune_scenario}_{args.bty}_alpha_{args.alpha}_scheduler{args.scheduler}_snr{args.snr_db}/'
         else:
-            save_path = args.root_dir + f'large/checkpoints_{args.scenario}_{args.bty}_range{args.range}km/seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_alpha_{args.alpha}_scheduler{args.scheduler}/'
+            save_path = args.root_dir + f'noise/checkpoints_{args.scenario}_{args.bty}_range{args.range}km/seed_{args.seed}_trainvalnum_{args.train_val_num}_testnum_{args.test_num}_epoch_{args.epochs}_finetune{args.finetune}_alpha_{args.alpha}_scheduler{args.scheduler}_snr{args.snr_db}/'
 
     logger.info('=> PyTorch Version: {}'.format(torch.__version__), root=save_path)
 
@@ -55,7 +55,7 @@ def main():
             data_dir = args.root_dir + f'Coh_data_matrix_256512_{args.scenario}_{args.bty}_range{args.range}.mat'
             free_data_dir = args.root_dir + f'Coh_data_matrix_free_256512_{args.scenario}_range{args.range}.mat'
 
-    train_loader, val_loader, test_loader = load_data(data_dir, free_data_dir, args.batch_size, args.train_val_num, args.test_num, args.workers, pin_memory, args.seed_data, save_path)
+    train_loader, val_loader, test_loader = load_data(data_dir, free_data_dir, args.batch_size, args.train_val_num, args.test_num, args.workers, pin_memory, args.seed_data, args.snr_db, save_path)
 
     # Define model
     model = init_model(args.pretrained, w=512, h=256, save_path=save_path)
