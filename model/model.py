@@ -86,17 +86,17 @@ class ExpandBlock(nn.Sequential):
 class SPPNet(nn.Module):
     def __init__(self, in_channel, out_channel):
         super(SPPNet, self).__init__()
-        self.encoder_block = SPPBlock(in_channel, 2, 8) # 256*512*in_channel -> 256*512*32
-        self.contract1 = ContractBlock(8, 16) # 256*512*32 -> 128*256*64
-        self.contract2 = ContractBlock(16, 32) # 128*256*64 -> 64*128*128
-        self.contract3 = ContractBlock(32, 64, pool_kernel=4, pool_stride=4) # 64*128*128 -> 16*32*256
-        self.max_pool = nn.MaxPool2d(2, 2) # 16*32*256 -> 8*16*256
+        self.encoder_block = SPPBlock(in_channel, 4, 4) # 256*512*in_channel -> 256*512*8
+        self.contract1 = ContractBlock(4, 8, pool_kernel=2, pool_stride=2) # 256*512*8 -> 128*256*16
+        self.contract2 = ContractBlock(8, 16, pool_kernel=2, pool_stride=2) # 128*256*16 -> 64*128*32
+        self.contract3 = ContractBlock(16, 32, pool_kernel=4, pool_stride=4) # 64*128*32 -> 16*32*64
+        self.max_pool = nn.MaxPool2d(2, 2) # 16*32*64 -> 8*16*64
 
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest') # 8*16*256 -> 16*32*256
-        self.expand1 = ExpandBlock(128, 64, upsample_stride=4) # 16*32*256+16*32*256 -> 64*128*256
-        self.expand2 = ExpandBlock(96, 32, upsample_stride=2) # 64*128*256+64*128*128 -> 128*256*128
-        self.expand3 = ExpandBlock(48, 16, upsample_stride=2) # 128*256*128+128*256*64 -> 256*512*64
-        self.conv1x1 = ConvBN(24, 2, 1) # 256*512*64 -> 256*512*2
+        self.expand1 = ExpandBlock(64, 32, upsample_stride=4) # 16*32*256+16*32*256 -> 64*128*256
+        self.expand2 = ExpandBlock(48, 16, upsample_stride=2) # 64*128*256+64*128*128 -> 128*256*128
+        self.expand3 = ExpandBlock(24, 8, upsample_stride=2) # 128*256*128+128*256*64 -> 256*512*64
+        self.conv1x1 = ConvBN(12, 2, 1) # 256*512*64 -> 256*512*2
         self.relu = nn.LeakyReLU(negative_slope=0.3, inplace=True)
         self.decoder_block = SPPBlock(2, 2, out_channel, res=True)
         self.sigmoid = nn.Sigmoid()
