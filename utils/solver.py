@@ -157,6 +157,7 @@ class Trainer:
         time_tmp = time.time()
 
         for batch_idx, (data, label) in enumerate(data_loader):
+            label = label[:, 0, :, :]
             data, label = data.to(self.device), label.to(self.device)
             data = torch.clamp(data, min=40, max=140)
             label = torch.clamp(label, min=40, max=140)
@@ -291,6 +292,7 @@ class Tester:
         time_tmp = time.time()
 
         for batch_idx, (data, label) in enumerate(data_loader):
+            label = label[:, 1, :, :]
             data, label = data.to(self.device), label.to(self.device)
             data = torch.clamp(data, min=40, max=140)
             label = torch.clamp(label, min=40, max=140)
@@ -332,6 +334,7 @@ class Tester:
     def plot_TL(self, num_pair, data_loader):
         for i in range(num_pair):
             data, label = next(iter(data_loader))
+            label = label[:, 1, :, :]
             logger.info(f'shape of data: {data.shape}, shape of label: {label.shape}\n', root=self.save_path)
             idx = torch.randint(0, data.size(0), (1,)).item()
             logger.info(f'num_pair:{i}, idx: {idx}\n', root=self.save_path)
@@ -506,6 +509,7 @@ class Tester:
     def plot_IG(self, num_pair, data_loader):
         for i in range(num_pair):
             data, label = next(iter(data_loader))
+            label = label[:, 1, :, :]
             idx = torch.randint(0, data.size(0), (1,)).item()
             data, label = data[idx].to(self.device), label[idx].to(self.device)
             output = self.model(data.unsqueeze(0)).squeeze(0).squeeze(0)

@@ -24,7 +24,7 @@ class SPPDataset(torch.utils.data.Dataset):
         return self.dataset.shape[0]
         
     def __getitem__(self, idx):
-        return self.dataset[idx, :2, :, :], self.dataset[idx, 2, :, :]
+        return self.dataset[idx, :2, :, :], self.dataset[idx, 2:, :, :]
     
 def add_noise_to_data(data, snr_db):
     """
@@ -40,28 +40,46 @@ def add_noise_to_data(data, snr_db):
     if snr_db is None or snr_db == float('inf'):
         return data
     
-    signal_data = data[:, 1, :, :].clone()  # [N, H, W]
+    # 获取第1和第2个通道的数据
+    signal_data_1 = data[:, 1, :, :].clone()  # [N, H, W]
+    signal_data_2 = data[:, 2, :, :].clone()  # [N, H, W]
     
-    pressure_signal = torch.pow(10, -signal_data / 20.0)
+    # 将两个通道的TL转换回声压幅度
+    pressure_signal_1 = torch.pow(10, -signal_data_1 / 20.0)
+    pressure_signal_2 = torch.pow(10, -signal_data_2 / 20.0)
     
-    signal_power = torch.mean(pressure_signal ** 2)
+    # 计算两个通道的声压平方均值
+    signal_power_1 = torch.mean(pressure_signal_1 ** 2)
+    signal_power_2 = torch.mean(pressure_signal_2 ** 2)
     
+    # 使用两个通道的平均功率作为总信号功率
+    signal_power = (signal_power_1 + signal_power_2) / 2
+    
+    # 计算噪声方差
     snr_linear = 10 ** (snr_db / 10.0)
     noise_variance = signal_power / snr_linear
     
-    # gaussian noise
-    noise = torch.randn_like(pressure_signal) * torch.sqrt(noise_variance)
+    # 为两个通道分别生成高斯白噪声
+    noise_1 = torch.randn_like(pressure_signal_1) * torch.sqrt(noise_variance)
+    noise_2 = torch.randn_like(pressure_signal_2) * torch.sqrt(noise_variance)
     
-    pressure_noisy = pressure_signal + noise
+    # 将噪声加到声压幅度上
+    pressure_noisy_1 = pressure_signal_1 + noise_1
+    pressure_noisy_2 = pressure_signal_2 + noise_2
     
+    # 将加噪后的声压转换回TL域
     epsilon = 1e-37
-    pressure_noisy = torch.clamp(pressure_noisy, min=epsilon)
-    TL_noisy = -20 * torch.log10(pressure_noisy)
+    pressure_noisy_1 = torch.clamp(pressure_noisy_1, min=epsilon)
+    pressure_noisy_2 = torch.clamp(pressure_noisy_2, min=epsilon)
+    
+    TL_noisy_1 = -20 * torch.log10(pressure_noisy_1)
+    TL_noisy_2 = -20 * torch.log10(pressure_noisy_2)
     
     # 将加噪后的数据替换回原数据
     data_noisy = data.clone()
-    data_noisy[:, 1, :, :] = TL_noisy
-    
+    data_noisy[:, 1, :, :] = TL_noisy_1
+    data_noisy[:, 2, :, :] = TL_noisy_2
+
     return data_noisy, signal_power, noise_variance
     
 
@@ -97,6 +115,7 @@ def load_data(data_file, free_data_file, batch_size, train_val_num, test_num, nu
     free_dataset = torch.from_numpy(free_dataset)
 
     dataset = torch.concat((free_dataset, dataset), dim=1)
+    dataset = torch.cat((dataset, dataset[:, 2, :, :].unsqueeze(1)), dim=1)
 
     # 所有数据打乱 取train val test dataset
     np.random.seed(seed)
